@@ -3,18 +3,22 @@ import { TokenUsage } from './components/TokenUsage'
 import { SessionProgress } from './components/SessionProgress'
 import { StatCards } from './components/StatCards'
 import { PromptOptimizer } from './components/PromptOptimizer'
-import { demoUsage } from './demoData'
+import { useUsage } from './popup/useUsage'
+import { DEMO_SESSION_PERCENT } from './popup/demoSessionPercent'
+import { formatTokenCount } from './usage/formatTokenCount'
 import './App.css'
 
 function App() {
+  const usage = useUsage()
+
   return (
     <div className="app">
       <Header />
-      <TokenUsage totalTokens={demoUsage.totalTokens} />
-      <SessionProgress percent={demoUsage.sessionPercent} />
+      <TokenUsage totalTokens={formatTokenCount(usage.totalTokens)} />
+      <SessionProgress percent={DEMO_SESSION_PERCENT} />
       <StatCards
-        inputTokens={demoUsage.inputTokens}
-        outputTokens={demoUsage.outputTokens}
+        inputTokens={formatTokenCount(usage.inputTokens)}
+        outputTokens={formatTokenCount(usage.outputTokens)}
       />
       <PromptOptimizer />
     </div>

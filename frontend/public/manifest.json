@@ -10,5 +10,12 @@
     "service_worker": "background.js",
     "type": "module"
   },
-  "permissions": []
+  "content_scripts": [
+    {
+      "matches": ["https://chatgpt.com/*", "https://chat.openai.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "permissions": ["storage"]
 }
