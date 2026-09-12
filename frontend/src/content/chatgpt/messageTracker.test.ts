@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { createMessageTracker } from './messageTracker'
+import { createMessageTracker, type TrackedMessage } from './messageTracker'
 
 const STABLE_MS = 1000
 
@@ -13,15 +13,15 @@ function flushMicrotasks(): Promise<void> {
 
 describe('createMessageTracker', () => {
   let root: HTMLDivElement
-  let onUserMessage: ReturnType<typeof vi.fn<(text: string) => void>>
-  let onAssistantMessage: ReturnType<typeof vi.fn<(text: string) => void>>
+  let onUserMessage: ReturnType<typeof vi.fn<(message: TrackedMessage) => void>>
+  let onAssistantMessage: ReturnType<typeof vi.fn<(message: TrackedMessage) => void>>
 
   beforeEach(() => {
     vi.useFakeTimers()
     root = document.createElement('div')
     document.body.appendChild(root)
-    onUserMessage = vi.fn<(text: string) => void>()
-    onAssistantMessage = vi.fn<(text: string) => void>()
+    onUserMessage = vi.fn<(message: TrackedMessage) => void>()
+    onAssistantMessage = vi.fn<(message: TrackedMessage) => void>()
   })
 
   afterEach(() => {
@@ -45,7 +45,9 @@ describe('createMessageTracker', () => {
 
     // User messages don't wait for the stability window.
     expect(onUserMessage).toHaveBeenCalledTimes(1)
-    expect(onUserMessage).toHaveBeenCalledWith('Hello there')
+    expect(onUserMessage).toHaveBeenCalledWith(
+      expect.objectContaining({ text: 'Hello there' }),
+    )
 
     vi.advanceTimersByTime(STABLE_MS * 2)
     expect(onUserMessage).toHaveBeenCalledTimes(1)
@@ -60,7 +62,9 @@ describe('createMessageTracker', () => {
     await flushMicrotasks()
 
     expect(onUserMessage).toHaveBeenCalledTimes(1)
-    expect(onUserMessage).toHaveBeenCalledWith('Hello there')
+    expect(onUserMessage).toHaveBeenCalledWith(
+      expect.objectContaining({ text: 'Hello there' }),
+    )
   })
 
   it('waits for an assistant message to stop changing before counting it once', async () => {
@@ -82,7 +86,9 @@ describe('createMessageTracker', () => {
     // Content goes quiet for the full stability window.
     vi.advanceTimersByTime(STABLE_MS)
     expect(onAssistantMessage).toHaveBeenCalledTimes(1)
-    expect(onAssistantMessage).toHaveBeenCalledWith('Hello world')
+    expect(onAssistantMessage).toHaveBeenCalledWith(
+      expect.objectContaining({ text: 'Hello world' }),
+    )
 
     // Further quiet time must not trigger a second count.
     vi.advanceTimersByTime(STABLE_MS * 3)
@@ -119,8 +125,14 @@ describe('createMessageTracker', () => {
 
     expect(onUserMessage).toHaveBeenCalledTimes(2)
     expect(onAssistantMessage).toHaveBeenCalledTimes(2)
-    expect(onAssistantMessage).toHaveBeenNthCalledWith(1, '4')
-    expect(onAssistantMessage).toHaveBeenNthCalledWith(2, '6')
+    expect(onAssistantMessage).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({ text: '4' }),
+    )
+    expect(onAssistantMessage).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ text: '6' }),
+    )
   })
 
   it('ignores empty message elements', async () => {
@@ -144,5 +156,72 @@ describe('createMessageTracker', () => {
     vi.advanceTimersByTime(STABLE_MS)
 
     expect(onUserMessage).not.toHaveBeenCalled()
+  })
+
+  it('prefers a native data-message-id over the positional fallback', async () => {
+    createMessageTracker(root, { onUserMessage, onAssistantMessage }, STABLE_MS)
+
+    const el = addMessage('user', 'Hello there')
+    el.setAttribute('data-message-id', 'native-id-123')
+    await flushMicrotasks()
+
+    expect(onUserMessage).toHaveBeenCalledWith({ id: 'native-id-123', text: 'Hello there' })
+  })
+
+  it('does not treat a node marked "processed" under a different scope as already handled', async () => {
+    // Regression: if a DOM node persists across a conversation switch (the
+    // page isn't guaranteed to tear down old message elements just because
+    // the active conversation changed — e.g. a login-triggered re-render),
+    // a fresh tracker for the new conversation must still be able to
+    // evaluate it, rather than skip it forever because some earlier
+    // tracker already marked it.
+    addMessage('user', 'Carried over from another scope')
+
+    const trackerA = createMessageTracker(
+      root,
+      { onUserMessage, onAssistantMessage },
+      STABLE_MS,
+      'conversation-a',
+    )
+    await flushMicrotasks()
+    expect(onUserMessage).toHaveBeenCalledTimes(1)
+    trackerA.disconnect()
+
+    const onUserMessageB = vi.fn<(message: TrackedMessage) => void>()
+    createMessageTracker(
+      root,
+      { onUserMessage: onUserMessageB, onAssistantMessage },
+      STABLE_MS,
+      'conversation-b',
+    )
+    await flushMicrotasks()
+
+    expect(onUserMessageB).toHaveBeenCalledTimes(1)
+    expect(onUserMessageB).toHaveBeenCalledWith(
+      expect.objectContaining({ text: 'Carried over from another scope' }),
+    )
+  })
+
+  it('still dedupes normally within the same scope across re-attachment', async () => {
+    addMessage('user', 'Same conversation, re-attached tracker')
+
+    const trackerA = createMessageTracker(
+      root,
+      { onUserMessage, onAssistantMessage },
+      STABLE_MS,
+      'conversation-a',
+    )
+    await flushMicrotasks()
+    trackerA.disconnect()
+
+    createMessageTracker(
+      root,
+      { onUserMessage, onAssistantMessage },
+      STABLE_MS,
+      'conversation-a',
+    )
+    await flushMicrotasks()
+
+    expect(onUserMessage).toHaveBeenCalledTimes(1)
   })
 })

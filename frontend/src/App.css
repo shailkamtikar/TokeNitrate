@@ -128,6 +128,25 @@
   background: var(--color-accent);
 }
 
+.session-progress__remaining {
+  margin-top: 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+.session-progress__warning {
+  margin: 8px 0 0;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+}
+
+.session-progress__warning--critical,
+.session-progress__warning--capacityReached {
+  color: var(--color-warning);
+}
+
 /* Stat cards */
 
 .stat-cards {

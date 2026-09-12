@@ -1,8 +1,18 @@
+import type { ContextWarningLevel } from '../usage/warningState'
+
 type SessionProgressProps = {
   percent: number
+  remainingPercent: number
+  warningLevel: ContextWarningLevel
+  warningMessage: string | null
 }
 
-export function SessionProgress({ percent }: SessionProgressProps) {
+export function SessionProgress({
+  percent,
+  remainingPercent,
+  warningLevel,
+  warningMessage,
+}: SessionProgressProps) {
   const clamped = Math.min(100, Math.max(0, percent))
 
   return (
@@ -17,13 +27,19 @@ export function SessionProgress({ percent }: SessionProgressProps) {
         aria-valuenow={clamped}
         aria-valuemin={0}
         aria-valuemax={100}
-        aria-label="Session token usage"
+        aria-label="Estimated context usage for the current conversation"
       >
         <div
           className="session-progress__fill"
           style={{ width: `${clamped}%` }}
         />
       </div>
+      <div className="session-progress__remaining">~{remainingPercent}% remaining</div>
+      {warningMessage && (
+        <p className={`session-progress__warning session-progress__warning--${warningLevel}`}>
+          {warningMessage}
+        </p>
+      )}
     </section>
   )
 }
