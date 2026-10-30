@@ -5,6 +5,7 @@ import {
   updateConversationUsage,
 } from '../../usage/conversationUsageStore'
 import { addInputTokens, addOutputTokens } from '../../usage/usageStore'
+import { appendToLedger } from '../../usage/tokenLedger'
 import { getConversationIdFromUrl } from './conversationId'
 import { isExtensionContextInvalidatedError, isExtensionContextValid } from './extensionContext'
 import {
@@ -38,8 +39,10 @@ async function recordMessage(
   messageId: string,
   text: string,
   fileTokens = 0,
+  live = false,
 ): Promise<void> {
-  const tokenCount = countTokens(text) + fileTokens
+  const textTokens = countTokens(text)
+  const tokenCount = textTokens + fileTokens
   let wasNew = false
 
   await updateConversationUsage(conversationId, (current) => {
@@ -73,6 +76,19 @@ async function recordMessage(
   if (wasNew) {
     if (field === 'inputTokens') await addInputTokens(tokenCount)
     else await addOutputTokens(tokenCount)
+
+    // The account-wide usage ledger only records live activity: history that
+    // merely re-rendered on page load was not used just now.
+    if (live) {
+      await appendToLedger(
+        field === 'inputTokens'
+          ? [
+              { kind: 'you', tokens: textTokens },
+              { kind: 'files', tokens: fileTokens },
+            ]
+          : [{ kind: 'chatgpt', tokens: textTokens }],
+      )
+    }
   }
 }
 
@@ -192,22 +208,20 @@ export function startConversationSync(
           }
           // Files attached to a message that was just sent count with it;
           // history never consumes pending files.
-          const sentFiles =
-            attachments && isLiveUserMessage(root, message)
-              ? attachments.consumeForMessage(element)
-              : []
+          const live = isLiveUserMessage(root, message)
+          const sentFiles = attachments && live ? attachments.consumeForMessage(element) : []
           const fileTokens = sentFiles.reduce((sum, file) => sum + file.estimatedTokens, 0)
-          void recordMessage(conversationId, 'inputTokens', id, text, fileTokens).catch((error: unknown) => {
+          void recordMessage(conversationId, 'inputTokens', id, text, fileTokens, live).catch((error: unknown) => {
             handleStorageError(error, 'record input tokens')
           })
         },
-        onAssistantMessage: ({ id, text }) => {
+        onAssistantMessage: ({ id, text, fromInitialScan }) => {
           if (stopped) return
           if (!isExtensionContextValid()) {
             stopDueToInvalidatedContext()
             return
           }
-          void recordMessage(conversationId, 'outputTokens', id, text).catch((error: unknown) => {
+          void recordMessage(conversationId, 'outputTokens', id, text, 0, !fromInitialScan).catch((error: unknown) => {
             handleStorageError(error, 'record output tokens')
           })
         },
