@@ -6,8 +6,8 @@ import { createAttachmentTracker } from './attachments/attachmentTracker'
 import { startConversationSync } from './conversationSync'
 import { startDraftController } from './draft/draftController'
 import { isExtensionContextValid } from './extensionContext'
-import { getConversationIdFromUrl } from './conversationId'
 import { createLimitWatcher } from './limitWatcher'
+import { handlePopupMessage } from './messageHandlers'
 
 // One attachment tracker is shared: the draft badge shows pending files, and
 // the conversation sync counts them when the message carrying them is sent.
@@ -29,13 +29,11 @@ createLimitWatcher(document.body, () => {
   })().catch(() => undefined)
 })
 
-// Lets the popup find out whether this tab is being tracked. A tab that was
-// open before the extension was installed or reloaded has no script until it
-// is refreshed once, so the popup uses this to say so.
+// Answers the popup: is this tab tracked, what is the draft, apply a shortened
+// draft. A tab that was open before the extension was installed or reloaded
+// has no script until it is refreshed once, which the popup explains.
 if (isExtensionContextValid()) {
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-    if (message?.type === 'tokenitrate:ping') {
-      sendResponse({ ok: true, conversationId: getConversationIdFromUrl(location.href) })
-    }
+    handlePopupMessage(message, sendResponse)
   })
 }

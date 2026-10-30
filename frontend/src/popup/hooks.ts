@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { MSG_PING } from '../messaging/protocol'
 import {
   getObservations,
   subscribeToObservations,
@@ -63,7 +64,6 @@ export const useLimitHit = (): LimitHit | null =>
 export type TabStatus = 'loading' | 'not-chatgpt' | 'needs-reload' | 'ready'
 
 const CHATGPT_HOSTS = ['chatgpt.com', 'chat.openai.com']
-export const PING_MESSAGE = 'tokenitrate:ping'
 
 export function isChatGptUrl(url: string | undefined): boolean {
   if (!url) return false
@@ -92,7 +92,7 @@ export function useTabStatus(): TabStatus {
       .then(async ([tab]) => {
         if (!tab || !isChatGptUrl(tab.url)) return finish('not-chatgpt')
         try {
-          await chrome.tabs.sendMessage(tab.id!, { type: PING_MESSAGE })
+          await chrome.tabs.sendMessage(tab.id!, { type: MSG_PING })
           finish('ready')
         } catch {
           finish('needs-reload')

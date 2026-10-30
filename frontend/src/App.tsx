@@ -53,7 +53,7 @@ function App() {
           {tracking && <ContextCard view={view.context} hasChat={conversation.conversationId !== null} />}
           {tab !== 'loading' && <UsageCard view={view.usage} now={now} />}
           <LimitsExplainer />
-          {tracking && <PromptOptimizer />}
+          {tracking && <PromptOptimizer draftTokens={draft.tokens} />}
         </>
       )}
 
