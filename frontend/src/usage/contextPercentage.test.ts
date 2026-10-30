@@ -47,7 +47,7 @@ describe('calculateContextUsagePercentage', () => {
 
   it('uses the configured default capacity when none is given', () => {
     const withDefault = calculateContextUsagePercentage(64_000)
-    const withExplicit = calculateContextUsagePercentage(64_000, 128_000)
+    const withExplicit = calculateContextUsagePercentage(64_000, 16_000)
     expect(withDefault).toEqual(withExplicit)
   })
 })

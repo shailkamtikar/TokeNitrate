@@ -174,7 +174,7 @@ describe('useConversationUsage', () => {
   it('4. session percentage is non-zero when the conversation has tokens', async () => {
     await updateConversationUsage('conv-nonzero', (current) => ({
       ...current,
-      estimatedContextTokens: 12_800, // 10% of the 128K reference capacity
+      estimatedContextTokens: 12_800, // 80% of the 16K reference capacity
     }))
     await setActiveConversation('conv-nonzero')
 
@@ -193,7 +193,7 @@ describe('useConversationUsage', () => {
 
     await updateConversationUsage('conv-independent', (current) => ({
       ...current,
-      estimatedContextTokens: 6_400, // 5% of capacity
+      estimatedContextTokens: 800, // 5% of capacity
     }))
     await setActiveConversation('conv-independent')
 
@@ -201,7 +201,7 @@ describe('useConversationUsage', () => {
     await hook.flush()
 
     const usage = hook.getValue()?.usage
-    expect(usage?.estimatedContextTokens).toBe(6_400)
+    expect(usage?.estimatedContextTokens).toBe(800)
     const { roundedPercent } = calculateContextUsagePercentage(usage!.estimatedContextTokens)
     expect(roundedPercent).toBe(5)
   })

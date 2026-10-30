@@ -23,3 +23,7 @@ backend/.ruff_cache/
 .idea/
 .DS_Store
 Thumbs.db
+
+# --- Release artifacts / local tooling ---
+*.zip
+.claude/
