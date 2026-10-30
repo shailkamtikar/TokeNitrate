@@ -9,6 +9,7 @@ import { startDraftController } from './draft/draftController'
 import { isExtensionContextValid } from './extensionContext'
 import { createLimitWatcher } from './limitWatcher'
 import { handlePopupMessage } from './messageHandlers'
+import { createStreamWatcher } from './streamWatcher'
 
 // Housekeeping: drop per-chat records that haven't been touched in two months.
 if (isExtensionContextValid()) void pruneStaleConversations().catch(() => undefined)
@@ -20,6 +21,7 @@ const attachments = createAttachmentTracker(document, () => draft?.refresh())
 
 draft = startDraftController(document.body, () => attachments.pendingTokens())
 startConversationSync(document.body, undefined, attachments)
+createStreamWatcher(document.body)
 
 // When ChatGPT itself says a limit was reached, remember how many tokens we
 // had counted in the window: that is a real observation of the budget.

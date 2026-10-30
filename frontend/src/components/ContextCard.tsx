@@ -29,7 +29,10 @@ export function ContextCard({ view, hasChat }: ContextCardProps) {
 
         <div className="context__side">
           <div className="metric">
-            <span className="metric__label">Estimated tokens</span>
+            <span className="metric__label">
+              Estimated tokens
+              {view.streaming && <span className="live-dot" title="ChatGPT is replying"> live</span>}
+            </span>
             <span className="metric__value mono">
               <AnimatedNumber value={hasChat ? view.tokens : 0} />
             </span>

@@ -10,6 +10,7 @@ import { AnimatedNumber } from './components/ui/AnimatedNumber'
 import { useBudgetObservations, useLedger, useLimitHit, useNow, useSettings, useTabStatus } from './popup/hooks'
 import { useConversationUsage } from './popup/useConversationUsage'
 import { useDraftTokens } from './popup/useDraftTokens'
+import { useStreamTokens } from './popup/useStreamTokens'
 import { useUsage } from './popup/useUsage'
 import { buildViewModel } from './popup/viewModel'
 
@@ -19,6 +20,7 @@ function App() {
   const settings = useSettings()
   const conversation = useConversationUsage()
   const draft = useDraftTokens(conversation.conversationId)
+  const streamTokens = useStreamTokens(conversation.conversationId)
   const ledger = useLedger()
   const observations = useBudgetObservations()
   const limitHit = useLimitHit()
@@ -30,13 +32,14 @@ function App() {
       buildViewModel({
         conversation: conversation.usage,
         draftTokens: draft.tokens + draft.fileTokens,
+        streamTokens,
         settings,
         ledger,
         observations,
         limitHit,
         now,
       }),
-    [conversation.usage, draft, settings, ledger, observations, limitHit, now],
+    [conversation.usage, draft, streamTokens, settings, ledger, observations, limitHit, now],
   )
 
   const tracking = tab === 'ready'
