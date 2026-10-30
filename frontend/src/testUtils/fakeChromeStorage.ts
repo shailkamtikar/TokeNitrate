@@ -52,10 +52,23 @@ export function installFakeChromeStorage(): FakeChromeStorageHandle {
     return Promise.resolve()
   }
 
+  function remove(keys: string | string[]): Promise<void> {
+    if (failure) throw failure
+    const changes: Record<string, chrome.storage.StorageChange> = {}
+    for (const key of typeof keys === 'string' ? [keys] : keys) {
+      if (key in data) {
+        changes[key] = { oldValue: data[key] }
+        delete data[key]
+      }
+    }
+    for (const listener of listeners) listener(changes, 'local')
+    return Promise.resolve()
+  }
+
   const fakeChrome = {
     runtime,
     storage: {
-      local: { get, set },
+      local: { get, set, remove },
       onChanged: {
         addListener: (listener: ChangeListener) => listeners.add(listener),
         removeListener: (listener: ChangeListener) => listeners.delete(listener),

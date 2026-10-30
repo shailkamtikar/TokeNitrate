@@ -118,3 +118,20 @@ export function subscribeToActiveConversation(
   chrome.storage.onChanged.addListener(handleChange)
   return () => chrome.storage.onChanged.removeListener(handleChange)
 }
+
+/** Conversations untouched for this long are removed to keep storage small. */
+export const CONVERSATION_MAX_AGE_MS = 60 * 24 * 60 * 60 * 1000
+
+/** Deletes stored per-chat records not updated within CONVERSATION_MAX_AGE_MS. Returns how many were removed. */
+export async function pruneStaleConversations(now: number = Date.now()): Promise<number> {
+  const all = await chrome.storage.local.get(null)
+  const stale = Object.entries(all)
+    .filter(([key, value]) => {
+      if (!key.startsWith(CONVERSATION_KEY_PREFIX)) return false
+      const updated = (value as Partial<ConversationUsage> | undefined)?.lastUpdated
+      return typeof updated === 'number' && updated > 0 && now - updated > CONVERSATION_MAX_AGE_MS
+    })
+    .map(([key]) => key)
+  if (stale.length > 0) await chrome.storage.local.remove(stale)
+  return stale.length
+}
