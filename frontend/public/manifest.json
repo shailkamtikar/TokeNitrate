@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "TokeNitrate",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "See how many tokens your ChatGPT chats use, track your usage limit, and shorten long prompts before you send them.",
   "icons": {
     "16": "icons/icon16.png",
@@ -34,6 +34,6 @@
   "host_permissions": [
     "https://chatgpt.com/*",
     "https://chat.openai.com/*",
-    "http://127.0.0.1:8010/*"
+    "https://tokenitrate-api.onrender.com/*"
   ]
 }

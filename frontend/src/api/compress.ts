@@ -1,9 +1,9 @@
 import type { CompressErrorCode, CompressResponse } from '../messaging/protocol'
 
 /** Backend base URL. The Gemini key lives only on that server, never in the extension. */
-export const BACKEND_URL = 'http://127.0.0.1:8010'
+export const BACKEND_URL = 'https://tokenitrate-api.onrender.com'
 export const MAX_COMPRESS_CHARS = 20_000
-const REQUEST_TIMEOUT_MS = 25_000
+const REQUEST_TIMEOUT_MS = 60_000
 
 export interface CompressDeps {
   fetchFn: typeof fetch
@@ -94,7 +94,7 @@ export function describeCompressError(code: CompressErrorCode): string {
     case 'timeout':
       return 'The model took too long to answer. Try again.'
     case 'unreachable':
-      return 'Could not reach the TokeNitrate server. Is the backend running?'
+      return 'Could not reach the TokeNitrate server. It may be waking up; try again in a moment.'
     case 'not_configured':
       return 'The compression service has no API key configured yet.'
     default:
