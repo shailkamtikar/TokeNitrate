@@ -8,6 +8,7 @@ TokeNitrate is an estimator. These are the things it cannot know or does only ap
 - **Chat capacity (16,000 tokens).** A third-party estimate of the free-tier context size, not an official figure. It is editable in Settings.
 - **Usage budget (30,000 tokens per 5 hours).** OpenAI publishes no token budget. The default is a guess. When ChatGPT itself shows a usage-limit notice, the extension records how many tokens had been counted and uses the median of the last three observations as the budget. The usage-limit notice text has not been observed on the live site, so that detection is loose and unverified until a limit is actually hit.
 - **Attachments.** Estimated from file size and type (images by size bucket, text about 4 bytes per token, PDFs and Office files by a flat ratio). Accuracy is roughly 80-90% for typical files and worse for unusual ones (scanned PDFs, huge spreadsheets).
+- **Generated images are not counted.** When ChatGPT creates an image, only the request and the caption text are counted. The image's token cost depends on its size and level of detail, and OpenAI doesn't publish it, so the extension does not guess. Images you upload are estimated by file size.
 - **Files already in a chat.** Attachments are only counted when the extension sees them being sent. Files sent before the extension was installed are not counted.
 
 ## Behaviour

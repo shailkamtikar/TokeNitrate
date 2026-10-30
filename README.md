@@ -140,15 +140,35 @@ TokeNitrate/
 └─ docs/                     architecture, demo script, known limits, DOM notes, screenshots
 ```
 
+## Advantages and limitations
+
+### Advantages
+
+- **Live and passive.** Counts as you type, send and receive, with no refresh and nothing to click.
+- **Two limits, not one.** Shows both the per-chat context limit and the account-wide usage limit, in tokens, and explains the difference.
+- **Private by design.** Counting, attachment estimates and limits run in your browser. Only numbers are stored, never message text, and file contents are never read.
+- **Attachment-aware.** Files and uploaded images are estimated by size and added once, when the message is sent.
+- **Saves tokens.** The Prompt Optimizer shortens long prompts with Gemini and shows exactly how many tokens it saved, with one-click undo.
+- **Honest and adjustable.** Every number is labelled as an estimate, the budget learns from your own account, and capacity, budget and window are editable.
+- **Tested.** Over 200 automated tests on the extension and 18 on the backend.
+
+### Limitations
+
+- **Generated images are not counted.** If you ask ChatGPT to create an image, only the text of your request and its short caption are counted. The image itself adds nothing, because its token cost varies with its size and detail and OpenAI does not publish it. Images you *upload* are estimated by file size.
+- **Estimates, not official numbers.** ChatGPT's hidden system prompt, tools and reasoning tokens are invisible on the page, and OpenAI publishes neither the free-tier chat capacity nor the usage budget.
+- **Attachments are approximate.** Estimated from size and type only (roughly 80-90% accurate); scanned PDFs and unusual files are less accurate.
+- **Relies on ChatGPT's page layout.** If ChatGPT changes its markup, detection may need a one-file update.
+- **Prompt Optimizer depends on a free server and quota.** The hosted backend can take up to a minute to wake after being idle, and all users share one Gemini free-tier quota.
+
+More detail in [docs/KNOWN_LIMITS.md](docs/KNOWN_LIMITS.md).
+
+---
+
 ## Privacy
 
 - Token counting, attachment estimates and limits run entirely in your browser. File contents are never read.
 - Only numbers are stored in `chrome.storage.local`, never message text. Draft text is used only to count it.
 - Text leaves the browser only when you press **Compress my draft**: it goes to the backend, which sends it to Gemini. The Gemini API key is never inside the extension.
-
-## Accuracy and limits
-
-Token counts use `o200k_base` and can differ from what ChatGPT really spends (hidden system prompts, tools and reasoning are invisible). Attachment estimates are roughly 80-90% accurate. See [docs/KNOWN_LIMITS.md](docs/KNOWN_LIMITS.md).
 
 ## Tech
 
