@@ -332,3 +332,34 @@
   color: var(--text-3);
   font-size: 11px;
 }
+
+/* ---------- prompt optimizer ---------- */
+.btn--block { width: 100%; padding: 10px 12px; font-size: 13px; }
+.optimizer__lead { margin: 0 0 10px; }
+.btn__busy { display: inline-flex; align-items: center; gap: 8px; }
+.spinner {
+  width: 13px;
+  height: 13px;
+  border: 2px solid color-mix(in srgb, var(--accent-ink) 35%, transparent);
+  border-top-color: var(--accent-ink);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+.result { display: grid; gap: 4px; }
+.result__saved { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.result__big { color: var(--accent); font-size: 22px; font-weight: 650; letter-spacing: -0.03em; }
+.result__small { color: var(--text-2); font-size: 12px; }
+.result__text {
+  margin: 8px 0 0;
+  padding: 10px 12px;
+  max-height: 140px;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius-s);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 12px;
+  white-space: pre-wrap;
+  animation: rise var(--t-med) var(--ease) both;
+}
