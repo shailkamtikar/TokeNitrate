@@ -14,6 +14,18 @@ A Chrome extension that counts tokens live as you type, tracks two usage limits,
 
 ---
 
+## Download and install (no build needed)
+
+1. **Download** [`TokeNitrate-v1.0.1.zip`](releases/TokeNitrate-v1.0.1.zip) (open the link, then click the download button, or use "Raw").
+2. **Unzip** it to a folder.
+3. In Chrome, open `chrome://extensions` and turn on **Developer mode** (top right).
+4. Click **Load unpacked** and select the unzipped folder.
+5. **Refresh any open ChatGPT tab once.** After that, everything updates live.
+
+Live counting, both limits, attachments and settings work straight away. The **Prompt Optimizer** needs the backend, which runs on its own machine (see below), so it only works when the backend is running and reachable at `http://127.0.0.1:8010`.
+
+---
+
 ## Features
 
 | | |

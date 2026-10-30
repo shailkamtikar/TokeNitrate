@@ -26,4 +26,5 @@ Thumbs.db
 
 # --- Release artifacts / local tooling ---
 *.zip
+!releases/*.zip
 .claude/
