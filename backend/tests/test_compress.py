@@ -142,3 +142,8 @@ def test_api_key_is_never_in_a_response():
     r = c.post("/compress", json={"text": LONG}, headers=CLIENT_ID)
     assert "test" not in r.headers.get("access-control-allow-origin", "")
     assert "gemini_api_key" not in r.text.lower()
+
+
+def test_health_accepts_head_for_uptime_monitors():
+    c, _ = make()
+    assert c.head("/health").status_code == 200

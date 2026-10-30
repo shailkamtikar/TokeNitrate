@@ -1,0 +1,19 @@
+# Render blueprint for the TokeNitrate backend.
+# The Gemini key is NOT stored here: set GEMINI_API_KEY in the Render dashboard
+# (Environment tab). `sync: false` tells Render to ask for it instead of reading it from git.
+services:
+  - type: web
+    name: tokenitrate-api
+    runtime: python
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: GEMINI_MODEL
+        value: gemini-3.5-flash-lite
+      - key: GEMINI_API_KEY
+        sync: false

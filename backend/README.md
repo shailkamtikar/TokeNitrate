@@ -39,3 +39,13 @@ Prompt text is never logged or stored.
 ```
 uv run pytest
 ```
+
+## Deploy on Render (free)
+
+1. Push this repo to GitHub.
+2. In Render: **New → Blueprint** (or **New → Web Service**), pick this repo. The root `render.yaml` sets the build and start commands.
+3. When asked, set `GEMINI_API_KEY` (Environment tab). Never put it in the repo.
+4. After the first deploy, open `https://<your-service>.onrender.com/health`. It should return `{"status":"ok"}`.
+5. Optional: add an UptimeRobot **HTTP(s)** monitor on `/health` (5-minute interval) so the free instance doesn't sleep.
+
+`requirements.txt` is generated from `pyproject.toml` with `uv export --no-dev --no-hashes --no-emit-project -o requirements.txt`; regenerate it after changing dependencies.

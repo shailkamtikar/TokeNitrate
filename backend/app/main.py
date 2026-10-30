@@ -45,7 +45,8 @@ def create_app(settings: Settings | None = None, client: GeminiClient | None = N
         # Never echo the submitted text back in an error body.
         return _error(422, "invalid_request", "The request body is not valid.")
 
-    @app.get("/health")
+    # GET and HEAD, so uptime monitors (which often use HEAD) get a 200 and keep a free host awake.
+    @app.api_route("/health", methods=["GET", "HEAD"])
     def health() -> dict[str, str]:
         return {"status": "ok"}
 
