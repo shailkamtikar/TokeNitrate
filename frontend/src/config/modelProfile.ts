@@ -29,3 +29,30 @@ export const FREE_TIER_PROFILE: ModelProfile = {
 
 /** Debounce for the live draft counter, in milliseconds. */
 export const DRAFT_DEBOUNCE_MS = 150
+
+/**
+ * Attachment token estimation. ChatGPT's own file handling is opaque, so
+ * attachments are estimated from file size and type only (the extension
+ * never reads file contents). These are rough constants, tuned to land
+ * within roughly 10-20% for typical files.
+ */
+export const ATTACHMENT_ESTIMATION = {
+  /** Plain text and source code: about 4 bytes per token. */
+  textBytesPerToken: 4,
+  /** PDFs carry layout/fonts/compression overhead: far more bytes per token of text. */
+  pdfBytesPerToken: 40,
+  /** Office documents (docx/xlsx/pptx) are zipped XML. */
+  officeBytesPerToken: 25,
+  /** Anything we don't recognise. */
+  unknownBytesPerToken: 8,
+  /** Images: tokens by file size bucket (<= bytes). Mirrors OpenAI's 85 + 170 per 512px tile scheme. */
+  imageBuckets: [
+    { maxBytes: 200 * 1024, tokens: 255 },
+    { maxBytes: 1024 * 1024, tokens: 765 },
+    { maxBytes: Infinity, tokens: 1105 },
+  ],
+  /** A single file never counts for more than this. */
+  maxTokensPerFile: 100_000,
+  /** Pending (unsent) attachments older than this are dropped. */
+  pendingMaxAgeMs: 30 * 60 * 1000,
+} as const

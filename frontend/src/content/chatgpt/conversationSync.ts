@@ -13,6 +13,8 @@ import {
   type MessageTracker,
 } from './messageTracker'
 import { onLocationChange } from './navigationWatcher'
+import type { AttachmentTracker } from './attachments/attachmentTracker'
+import { CHATGPT_SELECTORS } from './selectors'
 
 export interface ConversationSyncHandle {
   disconnect: () => void
@@ -35,8 +37,9 @@ async function recordMessage(
   field: TokenField,
   messageId: string,
   text: string,
+  fileTokens = 0,
 ): Promise<void> {
-  const tokenCount = countTokens(text)
+  const tokenCount = countTokens(text) + fileTokens
   let wasNew = false
 
   await updateConversationUsage(conversationId, (current) => {
@@ -53,6 +56,7 @@ async function recordMessage(
       inputTokens,
       outputTokens,
       totalTokens,
+      attachmentTokens: (current.attachmentTokens ?? 0) + fileTokens,
       // V1: estimated context ≈ sum of tokenized visible conversation text.
       estimatedContextTokens: totalTokens,
       countedMessageIds: [...current.countedMessageIds, messageId],
@@ -90,6 +94,22 @@ async function recordMessage(
  * timers, and unsubscribing from navigation) until the page is refreshed,
  * which loads a fresh, valid instance.
  */
+/**
+ * A user message is "live" (just sent) rather than history if it appeared
+ * after the tracker attached. The one exception is the very first message of
+ * a brand-new chat: ChatGPT only switches the URL to /c/<id> after sending,
+ * so the tracker attaches when that message is already in the DOM.
+ */
+function isLiveUserMessage(
+  root: Document | Element,
+  message: { fromInitialScan: boolean },
+): boolean {
+  if (!message.fromInitialScan) return true
+  const users = root.querySelectorAll(CHATGPT_SELECTORS.userMessage).length
+  const assistants = root.querySelectorAll(CHATGPT_SELECTORS.assistantMessage).length
+  return users === 1 && assistants === 0
+}
+
 /** Generates a short id so each attached instance's log lines can be told
  * apart in the console — see the module doc comment for why that matters. */
 function generateInstanceId(): string {
@@ -99,6 +119,7 @@ function generateInstanceId(): string {
 export function startConversationSync(
   root: Document | Element,
   assistantStableMs: number = DEFAULT_ASSISTANT_STABLE_MS,
+  attachments: AttachmentTracker | null = null,
 ): ConversationSyncHandle {
   // Identifies *this* attached instance in every log line it produces. If
   // the extension is reloaded/updated while a tab is still open, that tab
@@ -162,13 +183,21 @@ export function startConversationSync(
     activeTracker = createMessageTracker(
       root,
       {
-        onUserMessage: ({ id, text }) => {
+        onUserMessage: (message) => {
+          const { id, text, element } = message
           if (stopped) return
           if (!isExtensionContextValid()) {
             stopDueToInvalidatedContext()
             return
           }
-          void recordMessage(conversationId, 'inputTokens', id, text).catch((error: unknown) => {
+          // Files attached to a message that was just sent count with it;
+          // history never consumes pending files.
+          const sentFiles =
+            attachments && isLiveUserMessage(root, message)
+              ? attachments.consumeForMessage(element)
+              : []
+          const fileTokens = sentFiles.reduce((sum, file) => sum + file.estimatedTokens, 0)
+          void recordMessage(conversationId, 'inputTokens', id, text, fileTokens).catch((error: unknown) => {
             handleStorageError(error, 'record input tokens')
           })
         },
