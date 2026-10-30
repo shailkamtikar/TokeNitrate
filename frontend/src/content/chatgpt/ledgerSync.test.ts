@@ -25,7 +25,7 @@ function addAssistant(root: HTMLElement, id: string, text: string): void {
 async function settle(): Promise<void> {
   await Promise.resolve()
   vi.advanceTimersByTime(STABLE_MS)
-  for (let i = 0; i < 15; i++) await Promise.resolve()
+  for (let i = 0; i < 60; i++) await Promise.resolve()
 }
 
 describe('usage ledger is fed by live activity only', () => {
@@ -74,12 +74,47 @@ describe('usage ledger is fed by live activity only', () => {
     expect(kinds).toContain('chatgpt')
   })
 
-  it('counts the first message of a brand-new chat as live', async () => {
-    history.pushState({}, '', '/c/new-chat')
-    addUser(root, 'first', 'the very first message')
+  it('counts the first exchange of a brand-new chat as live, even though the URL only changes afterwards', async () => {
+    history.pushState({}, '', '/') // landing page
     handle = startConversationSync(root, STABLE_MS)
     await settle()
-    expect((await getLedger()).map((e) => e.kind)).toEqual(['you'])
+
+    // The user sends the first message; ChatGPT shows the reply, and only then switches the URL.
+    addUser(root, 'first', 'the very first message')
+    addAssistant(root, 'first-reply', 'and the very first reply')
+    History.prototype.pushState.call(history, {}, '', '/c/brand-new') // page-world navigation
+    vi.advanceTimersByTime(400)
+    await settle()
+
+    const kinds = (await getLedger()).map((e) => e.kind)
+    expect(kinds).toContain('you')
+    expect(kinds).toContain('chatgpt')
+  })
+
+  it('does not treat a reloaded one-exchange chat as live', async () => {
+    history.pushState({}, '', '/c/reloaded-chat') // opened directly, no landing page first
+    addUser(root, 'u', 'an old question')
+    addAssistant(root, 'a', 'an old answer')
+    handle = startConversationSync(root, STABLE_MS)
+    await settle()
+    expect(await getLedger()).toEqual([])
+  })
+
+  it('follows a chat switch made by the page, without a reload', async () => {
+    history.pushState({}, '', '/c/chat-a')
+    handle = startConversationSync(root, STABLE_MS)
+    await settle()
+
+    root.innerHTML = ''
+    History.prototype.pushState.call(history, {}, '', '/c/chat-b') // page-world navigation
+    vi.advanceTimersByTime(400)
+    await settle()
+    addUser(root, 'b1', 'a message in chat b')
+    await settle()
+
+    const { getConversationUsage } = await import('../../usage/conversationUsageStore')
+    expect((await getConversationUsage('chat-b')).inputTokens).toBeGreaterThan(0)
+    expect((await getConversationUsage('chat-a')).inputTokens).toBe(0)
   })
 
   it('does not add to the ledger again after a refresh', async () => {

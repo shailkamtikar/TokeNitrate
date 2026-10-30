@@ -96,6 +96,26 @@ async function recordMessage(
 }
 
 /**
+ * A message is "live" (just sent or just received) rather than history if it
+ * appeared after the tracker attached. The exception is a brand-new chat:
+ * ChatGPT only switches the URL from the landing page to /c/<id> after the
+ * first message is sent, so the tracker attaches when that first exchange is
+ * already in the DOM. When we arrived from the landing page and the page holds
+ * at most one exchange, that exchange is live too.
+ */
+function isLiveMessage(
+  root: Document | Element,
+  message: { fromInitialScan: boolean },
+  promotedFromLanding: boolean,
+): boolean {
+  if (!message.fromInitialScan) return true
+  if (!promotedFromLanding) return false
+  const users = root.querySelectorAll(CHATGPT_SELECTORS.userMessage).length
+  const assistants = root.querySelectorAll(CHATGPT_SELECTORS.assistantMessage).length
+  return users <= 1 && assistants <= 1
+}
+
+/**
  * Keeps stored usage in sync with whichever ChatGPT conversation is loaded
  * in `root`'s document: it identifies the active conversation from the URL,
  * re-attaches message tracking whenever that conversation changes
@@ -113,22 +133,6 @@ async function recordMessage(
  * timers, and unsubscribing from navigation) until the page is refreshed,
  * which loads a fresh, valid instance.
  */
-/**
- * A user message is "live" (just sent) rather than history if it appeared
- * after the tracker attached. The one exception is the very first message of
- * a brand-new chat: ChatGPT only switches the URL to /c/<id> after sending,
- * so the tracker attaches when that message is already in the DOM.
- */
-function isLiveUserMessage(
-  root: Document | Element,
-  message: { fromInitialScan: boolean },
-): boolean {
-  if (!message.fromInitialScan) return true
-  const users = root.querySelectorAll(CHATGPT_SELECTORS.userMessage).length
-  const assistants = root.querySelectorAll(CHATGPT_SELECTORS.assistantMessage).length
-  return users === 1 && assistants === 0
-}
-
 /** Generates a short id so each attached instance's log lines can be told
  * apart in the console — see the module doc comment for why that matters. */
 function generateInstanceId(): string {
@@ -154,6 +158,7 @@ export function startConversationSync(
   const logPrefix = `[TokeNitrate:${instanceId}]`
 
   let activeConversationId: string | null = null
+  let sawLandingPage = false
   let activeTracker: MessageTracker | null = null
   let unsubscribeNavigation: (() => void) | null = null
   let stopped = false
@@ -198,7 +203,7 @@ export function startConversationSync(
     console.error(`${logPrefix} failed to ${action}`, error)
   }
 
-  function attach(conversationId: string): void {
+  function attach(conversationId: string, promotedFromLanding: boolean): void {
     activeTracker = createMessageTracker(
       root,
       {
@@ -211,20 +216,28 @@ export function startConversationSync(
           }
           // Files attached to a message that was just sent count with it;
           // history never consumes pending files.
-          const live = isLiveUserMessage(root, message)
+          const live = isLiveMessage(root, message, promotedFromLanding)
           const sentFiles = attachments && live ? attachments.consumeForMessage(element) : []
           const fileTokens = sentFiles.reduce((sum, file) => sum + file.estimatedTokens, 0)
           void recordMessage(conversationId, 'inputTokens', id, text, fileTokens, live).catch((error: unknown) => {
             handleStorageError(error, 'record input tokens')
           })
         },
-        onAssistantMessage: ({ id, text, fromInitialScan }) => {
+        onAssistantMessage: (message) => {
+          const { id, text } = message
           if (stopped) return
           if (!isExtensionContextValid()) {
             stopDueToInvalidatedContext()
             return
           }
-          void recordMessage(conversationId, 'outputTokens', id, text, 0, !fromInitialScan).catch((error: unknown) => {
+          void recordMessage(
+            conversationId,
+            'outputTokens',
+            id,
+            text,
+            0,
+            isLiveMessage(root, message, promotedFromLanding),
+          ).catch((error: unknown) => {
             handleStorageError(error, 'record output tokens')
           })
         },
@@ -247,7 +260,12 @@ export function startConversationSync(
     }
 
     const conversationId = getConversationIdFromUrl(url)
+    if (conversationId === null) sawLandingPage = true
     if (conversationId === activeConversationId) return
+
+    // Arriving at a chat straight from the landing page means a new chat
+    // was just created by sending its first message.
+    const promotedFromLanding = activeConversationId === null && sawLandingPage
 
     activeTracker?.disconnect()
     activeTracker = null
@@ -260,7 +278,7 @@ export function startConversationSync(
     // A null conversationId means there's no conversation yet (e.g. the
     // new-chat landing page) — nothing to attribute usage to until ChatGPT
     // navigates to a real conversation URL.
-    if (conversationId) attach(conversationId)
+    if (conversationId) attach(conversationId, promotedFromLanding)
   }
 
   console.info(`${logPrefix} content script attached`)

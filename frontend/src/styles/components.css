@@ -363,3 +363,17 @@
   white-space: pre-wrap;
   animation: rise var(--t-med) var(--ease) both;
 }
+
+/* ---------- live indicator ---------- */
+.live-dot { margin-left: 6px; color: var(--accent); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; font-size: 10px; }
+.live-dot::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: pulse-dot 1s ease-in-out infinite;
+}
+@keyframes pulse-dot { 50% { opacity: 0.25; transform: scale(0.7); } }
