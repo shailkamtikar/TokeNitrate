@@ -6,7 +6,7 @@ A walkthrough that shows every feature. Each step lists what you should see.
 
 1. `cd frontend && npm install && npm run build`
 2. Chrome → `chrome://extensions` → Developer mode → Load unpacked → `frontend/dist`.
-3. Backend (for step 8): `cd backend`, put your key in `.env`, then `uv run uvicorn app.main:app --port 8010`.
+3. Backend (for step 8): the extension uses the hosted backend. If it was idle, the first Compress may take up to a minute.
 4. Open chatgpt.com, log in, **refresh the tab once**.
 
 ## Steps

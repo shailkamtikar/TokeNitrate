@@ -22,4 +22,4 @@ TokeNitrate is an estimator. These are the things it cannot know or does only ap
 
 - Uses one Gemini key on the backend. When the key's free quota is used up, the popup shows "temporarily unavailable". There is no key rotation.
 - Draft text is sent to the backend and then to Gemini when you press Compress. Per Google's terms, free-tier content may be used to improve their products.
-- The backend runs locally on `127.0.0.1:8010` by default.
+- The backend is hosted on Render's free tier (`https://tokenitrate-api.onrender.com`). It can take up to a minute to wake after being idle, and all users share one Gemini free-tier quota. To run your own, see `backend/README.md` and change `BACKEND_URL` in `frontend/src/api/compress.ts`.
