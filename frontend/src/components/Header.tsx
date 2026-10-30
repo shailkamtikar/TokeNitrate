@@ -1,35 +1,44 @@
-function SettingsIcon() {
+function GearIcon() {
   return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <circle cx="12" cy="12" r="3" />
       <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
     </svg>
   )
 }
 
-export function Header() {
+function BackIcon() {
+  return (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M15 18l-6-6 6-6" />
+    </svg>
+  )
+}
+
+type HeaderProps = {
+  settingsOpen: boolean
+  onToggleSettings: () => void
+}
+
+export function Header({ settingsOpen, onToggleSettings }: HeaderProps) {
   return (
     <header className="header">
-      <div className="header__brand">
-        <span className="header__mark" aria-hidden="true" />
-        <span className="header__wordmark">TokeNitrate</span>
+      <div className="brand">
+        <span className="brand__mark" aria-hidden="true">
+          <i />
+          <i />
+          <i />
+        </span>
+        <span className="brand__name">TokeNitrate</span>
       </div>
       <button
         type="button"
-        className="header__icon-button"
-        aria-label="Settings"
+        className="icon-button"
+        onClick={onToggleSettings}
+        aria-label={settingsOpen ? 'Back to usage' : 'Settings'}
+        title={settingsOpen ? 'Back' : 'Settings'}
       >
-        <SettingsIcon />
+        {settingsOpen ? <BackIcon /> : <GearIcon />}
       </button>
     </header>
   )

@@ -1,39 +1,68 @@
+import { useMemo, useState } from 'react'
 import { Header } from './components/Header'
-import { TokenUsage } from './components/TokenUsage'
-import { SessionProgress } from './components/SessionProgress'
-import { StatCards } from './components/StatCards'
+import { ContextCard } from './components/ContextCard'
+import { LimitsExplainer } from './components/LimitsExplainer'
 import { PromptOptimizer } from './components/PromptOptimizer'
-import { useUsage } from './popup/useUsage'
+import { SettingsView } from './components/SettingsView'
+import { StateScreen } from './components/StateScreen'
+import { UsageCard } from './components/UsageCard'
+import { AnimatedNumber } from './components/ui/AnimatedNumber'
+import { useBudgetObservations, useLedger, useLimitHit, useNow, useSettings, useTabStatus } from './popup/hooks'
 import { useConversationUsage } from './popup/useConversationUsage'
-import { formatTokenCount } from './usage/formatTokenCount'
-import { calculateContextUsagePercentage } from './usage/contextPercentage'
-import { getContextWarning } from './usage/warningState'
-import './App.css'
+import { useDraftTokens } from './popup/useDraftTokens'
+import { useUsage } from './popup/useUsage'
+import { buildViewModel } from './popup/viewModel'
 
 function App() {
-  const usage = useUsage()
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const tab = useTabStatus()
+  const settings = useSettings()
   const conversation = useConversationUsage()
+  const draft = useDraftTokens(conversation.conversationId)
+  const ledger = useLedger()
+  const observations = useBudgetObservations()
+  const limitHit = useLimitHit()
+  const allTime = useUsage()
+  const now = useNow()
 
-  const { roundedPercent, remainingPercent } = calculateContextUsagePercentage(
-    conversation.usage.estimatedContextTokens,
+  const view = useMemo(
+    () =>
+      buildViewModel({
+        conversation: conversation.usage,
+        draftTokens: draft.tokens + draft.fileTokens,
+        settings,
+        ledger,
+        observations,
+        limitHit,
+        now,
+      }),
+    [conversation.usage, draft, settings, ledger, observations, limitHit, now],
   )
-  const warning = getContextWarning(roundedPercent)
+
+  const tracking = tab === 'ready'
 
   return (
     <div className="app">
-      <Header />
-      <TokenUsage totalTokens={formatTokenCount(usage.totalTokens)} />
-      <SessionProgress
-        percent={roundedPercent}
-        remainingPercent={remainingPercent}
-        warningLevel={warning.level}
-        warningMessage={warning.message}
-      />
-      <StatCards
-        inputTokens={formatTokenCount(usage.inputTokens)}
-        outputTokens={formatTokenCount(usage.outputTokens)}
-      />
-      <PromptOptimizer />
+      <Header settingsOpen={settingsOpen} onToggleSettings={() => setSettingsOpen((open) => !open)} />
+
+      {settingsOpen ? (
+        <SettingsView key={JSON.stringify(settings)} settings={settings} />
+      ) : (
+        <>
+          {tab !== 'ready' && <StateScreen status={tab} />}
+          {tracking && <ContextCard view={view.context} hasChat={conversation.conversationId !== null} />}
+          {tab !== 'loading' && <UsageCard view={view.usage} now={now} />}
+          <LimitsExplainer />
+          {tracking && <PromptOptimizer />}
+        </>
+      )}
+
+      <footer className="footer">
+        <span>
+          All-time: <AnimatedNumber value={allTime.totalTokens} /> tokens
+        </span>
+        <span>Estimates only</span>
+      </footer>
     </div>
   )
 }
