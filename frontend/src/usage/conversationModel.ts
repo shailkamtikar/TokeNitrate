@@ -20,6 +20,12 @@ export interface ConversationUsage {
   outputTokens: number
   totalTokens: number
   estimatedContextTokens: number
+  /**
+   * Estimated tokens from attachments sent in this chat. Already included in
+   * `inputTokens`; kept separately so the UI can show a text/files split.
+   * Absent on records stored before this field existed (treated as 0).
+   */
+  attachmentTokens?: number
   countedMessageIds: string[]
   lastUpdated: number
 }
@@ -29,6 +35,7 @@ export const EMPTY_CONVERSATION_USAGE: ConversationUsage = {
   outputTokens: 0,
   totalTokens: 0,
   estimatedContextTokens: 0,
+  attachmentTokens: 0,
   countedMessageIds: [],
   lastUpdated: 0,
 }

@@ -3,6 +3,14 @@ import { CHATGPT_SELECTORS, extractMessageId, extractMessageText } from './selec
 export interface TrackedMessage {
   id: string
   text: string
+  /** The DOM node the message was read from (used to find attached files). */
+  element: Element
+  /**
+   * True if the message was already on the page when the tracker attached
+   * (conversation history), false if it appeared afterwards (a live send or
+   * a streamed reply).
+   */
+  fromInitialScan: boolean
 }
 
 export interface MessageTrackerCallbacks {
@@ -65,6 +73,8 @@ export function createMessageTracker(
   scopeId = 'default',
 ): MessageTracker {
   const pendingAssistant = new Map<Element, ReturnType<typeof setTimeout>>()
+  const initialElements = new WeakSet<Element>()
+  let scanningInitial = true
 
   function scanUserMessages(): void {
     const nodes = root.querySelectorAll(CHATGPT_SELECTORS.userMessage)
@@ -74,7 +84,8 @@ export function createMessageTracker(
       if (!text) return
       const id = extractMessageId(element, index)
       markProcessed(element, scopeId)
-      callbacks.onUserMessage({ id, text })
+      if (scanningInitial) initialElements.add(element)
+      callbacks.onUserMessage({ id, text, element, fromInitialScan: initialElements.has(element) })
     })
   }
 
@@ -89,7 +100,7 @@ export function createMessageTracker(
       if (!text) return
       const id = extractMessageId(element, index)
       markProcessed(element, scopeId)
-      callbacks.onAssistantMessage({ id, text })
+      callbacks.onAssistantMessage({ id, text, element, fromInitialScan: initialElements.has(element) })
     }, stableMs)
 
     pendingAssistant.set(element, timer)
@@ -99,6 +110,7 @@ export function createMessageTracker(
     const nodes = root.querySelectorAll(CHATGPT_SELECTORS.assistantMessage)
     nodes.forEach((element, index) => {
       if (isProcessed(element, scopeId)) return
+      if (scanningInitial) initialElements.add(element)
       scheduleAssistantCheck(element, index)
     })
   }
@@ -114,6 +126,7 @@ export function createMessageTracker(
   // Pick up anything already on the page when the tracker attaches (e.g. a
   // conversation's history on load, or after switching conversations).
   handleMutations()
+  scanningInitial = false
 
   return {
     disconnect() {

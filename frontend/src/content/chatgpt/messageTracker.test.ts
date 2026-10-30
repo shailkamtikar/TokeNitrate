@@ -165,7 +165,9 @@ describe('createMessageTracker', () => {
     el.setAttribute('data-message-id', 'native-id-123')
     await flushMicrotasks()
 
-    expect(onUserMessage).toHaveBeenCalledWith({ id: 'native-id-123', text: 'Hello there' })
+    expect(onUserMessage).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'native-id-123', text: 'Hello there' }),
+    )
   })
 
   it('does not treat a node marked "processed" under a different scope as already handled', async () => {
