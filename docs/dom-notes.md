@@ -48,3 +48,20 @@ This was a first-run welcome message (its unit key says `fallback-turn-0`), whic
 
 ### Implication
 The tracker in `selectors.ts` (`[data-message-author-role]`, `data-message-id`) may no longer match the current ChatGPT UI. If a normal chat shows the same, text counting is currently broken and Phase 0 must fix selectors before anything else.
+
+
+---
+
+## Real chat turn (logged in, verified 2026-10-30)
+
+After one test message ("hi") and its reply:
+
+| Item | Finding |
+|---|---|
+| User message | Text lives in `div[data-user-message-bubble="true"]` (inside `.whitespace-pre-wrap`). Its id is on an ancestor: `data-chatgpt-search-message-ids="<uuid>"` (also used as the turn's `data-turn-key`) |
+| Assistant message | `div[data-markdown-text-style="assistant-message"]`, with `data-chatgpt-selection-message-id="<uuid>"` on an ancestor |
+| Older attribute | `[data-message-author-role]` / `data-message-id` were **not present** in this layout, so `selectors.ts` supports both the old and the new markup |
+| Composer | `div[contenteditable=true][role=textbox]` (ProseMirror: one `<p>` per line; `<p class="placeholder" data-empty-paragraph>` when empty) |
+| Message action buttons | `aria-label`s such as "Copy", "Edit message", "Regenerate response" exist; the send button was not matched while the box was empty |
+
+Still unverified: how a sent attachment appears inside a user turn (the extension matches by file name, or an image thumbnail), and the text/markup of ChatGPT's own usage-limit notice.

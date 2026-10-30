@@ -25,6 +25,9 @@ export interface ConversationSyncHandle {
 
 type TokenField = 'inputTokens' | 'outputTokens'
 
+/** Bounds the per-chat dedupe record so very long chats can't grow storage without limit. */
+const MAX_COUNTED_IDS = 2000
+
 /**
  * Records one message against a conversation's stored usage, exactly once,
  * using `messageId` as the durable dedupe key. This is what makes reloading
@@ -62,7 +65,7 @@ async function recordMessage(
       attachmentTokens: (current.attachmentTokens ?? 0) + fileTokens,
       // V1: estimated context ≈ sum of tokenized visible conversation text.
       estimatedContextTokens: totalTokens,
-      countedMessageIds: [...current.countedMessageIds, messageId],
+      countedMessageIds: [...current.countedMessageIds, messageId].slice(-MAX_COUNTED_IDS),
       lastUpdated: Date.now(),
     }
     return next

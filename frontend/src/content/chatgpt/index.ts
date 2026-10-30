@@ -2,12 +2,16 @@ import { recordLimitHit } from '../../usage/budgetCalibration'
 import { setLimitHit } from '../../usage/limitHit'
 import { getLedger, tokensInWindow } from '../../usage/tokenLedger'
 import { getSettings } from '../../settings/settingsStore'
+import { pruneStaleConversations } from '../../usage/conversationUsageStore'
 import { createAttachmentTracker } from './attachments/attachmentTracker'
 import { startConversationSync } from './conversationSync'
 import { startDraftController } from './draft/draftController'
 import { isExtensionContextValid } from './extensionContext'
 import { createLimitWatcher } from './limitWatcher'
 import { handlePopupMessage } from './messageHandlers'
+
+// Housekeeping: drop per-chat records that haven't been touched in two months.
+if (isExtensionContextValid()) void pruneStaleConversations().catch(() => undefined)
 
 // One attachment tracker is shared: the draft badge shows pending files, and
 // the conversation sync counts them when the message carrying them is sent.

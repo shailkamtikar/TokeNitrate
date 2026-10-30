@@ -171,3 +171,20 @@ describe('limit message detection', () => {
     expect(looksLikeLimitMessage('')).toBe(false)
   })
 })
+
+describe('storage housekeeping', () => {
+  it('prunes only stale per-chat records', async () => {
+    const storage = installFakeChromeStorage()
+    const { pruneStaleConversations, CONVERSATION_MAX_AGE_MS } = await import('./conversationUsageStore')
+    const now = 2_000_000_000_000
+    await chrome.storage.local.set({
+      tokenitrate_conversation_old: { lastUpdated: now - CONVERSATION_MAX_AGE_MS - 1 },
+      tokenitrate_conversation_new: { lastUpdated: now - 1000 },
+      tokenitrate_usage: { totalTokens: 5 },
+    })
+    expect(await pruneStaleConversations(now)).toBe(1)
+    const left = Object.keys(await chrome.storage.local.get(null)).sort()
+    expect(left).toEqual(['tokenitrate_conversation_new', 'tokenitrate_usage'])
+    storage.uninstall()
+  })
+})
